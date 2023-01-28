@@ -2,11 +2,10 @@ package ru.cchgeu.data
 
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
-import ru.cchgeu.data.models.Account
-import ru.cchgeu.data.models.AccountTable
-import ru.cchgeu.data.models.ToAccount
+import ru.cchgeu.data.models.*
 
 
 fun getAccountByUsername(userName: String): Account? {
@@ -46,4 +45,12 @@ fun updateRefreshToken(accountId: Int, token: String) {
             it[refreshToken] = token
         }
     }
+}
+
+fun selectAllGroups(): List<Group> {
+    val groups = mutableListOf<Group>()
+    transaction {
+        GroupTable.selectAll().forEach { groups.add(it.toGroup()) }
+    }
+    return groups
 }
