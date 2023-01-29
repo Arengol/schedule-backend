@@ -54,3 +54,11 @@ fun selectAllGroups(): List<Group> {
     }
     return groups
 }
+
+fun selectAllMentors(): List<Mentor> {
+    val mentors = mutableListOf<Mentor>()
+    transaction {
+        MentorTable.selectAll().forEach { mentors.add(it.toMentor()) }
+    }
+    return mentors
+}
