@@ -17,5 +17,7 @@ fun Application.configureRouting(
         refresh(hashingService, tokenService)
         getAllGroups()
         getAllMentors()
+        associateGroup()
+        associateMentor()
     }
 }
