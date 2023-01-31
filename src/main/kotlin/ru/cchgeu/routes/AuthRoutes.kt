@@ -9,8 +9,9 @@ import ru.cchgeu.data.createAccount
 import ru.cchgeu.data.getAccountById
 import ru.cchgeu.data.getAccountByUsername
 import ru.cchgeu.data.models.Account
-import ru.cchgeu.data.models.requests.AuthRequest
+import ru.cchgeu.data.models.requests.SignUpRequest
 import ru.cchgeu.data.models.requests.RefreshRequest
+import ru.cchgeu.data.models.requests.SignInRequest
 import ru.cchgeu.data.models.responses.AuthResponse
 import ru.cchgeu.data.updateRefreshToken
 import ru.cchgeu.security.hashing.SHA256HashingService
@@ -20,7 +21,7 @@ import ru.cchgeu.security.token.TokenService
 
 fun Route.signUp(hashingService: SHA256HashingService, tokenService: TokenService) {
     post("signup"){
-        val request = call.receiveNullable<AuthRequest>() ?: kotlin.run {
+        val request = call.receiveNullable<SignUpRequest>() ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
@@ -39,7 +40,7 @@ fun Route.signUp(hashingService: SHA256HashingService, tokenService: TokenServic
             login = request.username,
             passwordHash = saltedHash.hash,
             salt = saltedHash.salt,
-            status = 0,
+            status = request.status,
             refreshToken = null
         )
         val accountId = createAccount(account) ?: kotlin.run {
@@ -66,7 +67,7 @@ fun Route.signUp(hashingService: SHA256HashingService, tokenService: TokenServic
 
 fun Route.signIn(hashingService: SHA256HashingService, tokenService: TokenService) {
     post("signin"){
-        val request = call.receiveNullable<AuthRequest>() ?: kotlin.run {
+        val request = call.receiveNullable<SignInRequest>() ?: kotlin.run {
             call.respond(HttpStatusCode.BadRequest)
             return@post
         }
