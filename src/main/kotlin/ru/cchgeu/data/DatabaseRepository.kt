@@ -4,7 +4,6 @@ import org.jetbrains.exposed.exceptions.ExposedSQLException
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.postgresql.util.PSQLException
 import ru.cchgeu.data.models.*
 
 
@@ -22,6 +21,16 @@ fun getAccountById(userId: Int): Account? {
         account = AccountTable.select { AccountTable.id eq userId }.limit(1).firstOrNull()?.ToAccount()
     }
     return account
+}
+
+fun verifyInviteCode (inviteCode: String): Boolean {
+    var result: Boolean = false
+    transaction {
+        result = InviteCodeTable.select {InviteCodeTable.code eq inviteCode}.limit(1).firstOrNull() != null
+        if (result)
+            InviteCodeTable.deleteWhere { InviteCodeTable.code eq inviteCode }
+    }
+    return result
 }
 
 fun createAccount(account: Account): Int? {
@@ -94,5 +103,115 @@ fun linkMentorAccount(mentor: Mentor): Boolean {
     }
     catch (e: ExposedSQLException) {
         return false
+    }
+}
+fun selectGroupByAccountId(accountId: Int): String {
+    var groupResult = ""
+    transaction {
+        groupResult = StudentTable.select { StudentTable.account eq accountId }.limit(1).first()[StudentTable.groupName]
+    }
+    return groupResult
+}
+
+fun selectMentorByAccountId(accountId: Int): String {
+    var mentorResult = ""
+    transaction {
+        mentorResult = MentorTable.select { MentorTable.account eq accountId }.limit(1).first()[MentorTable.name]
+    }
+    return mentorResult
+}
+
+fun selectMentorSchedule(mentor: String): List<ScheduleData> {
+    val scheduleResult = mutableListOf<ScheduleData>()
+    transaction {
+        (
+                TimeScheduleTable innerJoin
+                        ClassTable innerJoin
+                        ClassAndGroupTable innerJoin
+                        ClassAndMentorTable
+                ).select { ClassAndMentorTable.mentor eq mentor and (ClassTable.accountId.isNull()) }.forEach { scheduleResult.add(ScheduleData(
+                group = it[ClassAndGroupTable.group],
+                time = it[TimeScheduleTable.time],
+                dayWeek = it[TimeScheduleTable.dayOfWeek],
+                weekType = it[TimeScheduleTable.weekType],
+                name = it[ClassTable.name],
+                classType = it[ClassTable.type],
+                auditory = selectAuditoryByClassId(it[ClassTable.id]),
+                mentor = selectMentorByClassId(it[ClassTable.id])
+            )) }
+    }
+    return scheduleResult
+}
+fun selectScheduleByGroupId(groupId: String): List<ScheduleData> {
+    val scheduleResult = mutableListOf<ScheduleData>()
+    transaction {
+        (
+                TimeScheduleTable innerJoin
+                        ClassTable innerJoin
+                        ClassAndGroupTable
+                ).select { ClassAndGroupTable.group eq groupId and (ClassTable.accountId.isNull()) }.forEach { scheduleResult.add(ScheduleData(
+                group = it[ClassAndGroupTable.group],
+                time = it[TimeScheduleTable.time],
+                dayWeek = it[TimeScheduleTable.dayOfWeek],
+                weekType = it[TimeScheduleTable.weekType],
+                name = it[ClassTable.name],
+                classType = it[ClassTable.type],
+                auditory = selectAuditoryByClassId(it[ClassTable.id]),
+                mentor = selectMentorByClassId(it[ClassTable.id])
+                )) }
+    }
+    return scheduleResult
+}
+
+private fun selectMentorByClassId (classId: Int): List<String> {
+    val mentorResult = mutableListOf<String>()
+    transaction {
+        (MentorTable innerJoin ClassAndMentorTable).select { ClassAndMentorTable.classId eq classId }
+    }.forEach { mentorResult.add(it[MentorTable.name]) }
+    return mentorResult
+}
+
+private fun selectAuditoryByClassId (classId: Int): List<String> {
+    val mentorResult = mutableListOf<String>()
+    transaction {
+        (AuditoryTable innerJoin ClassAndAuditoryTable).select { ClassAndAuditoryTable.classId eq classId }
+    }.forEach { mentorResult.add(it[AuditoryTable.name]) }
+    return mentorResult
+}
+
+fun selectEventByAccountId (accountId: Int): List<Event> {
+    val eventResult = mutableListOf<Event>()
+    transaction {
+        EventTable.select{EventTable.account eq accountId}.forEach { eventResult.add(it.ToEvent()) }
+    }
+    return eventResult
+}
+
+fun editEventById (event: Event) {
+    transaction {
+        EventTable.update({EventTable.id eq event.id!!}) {
+            it[EventTable.timeBegin] = event.timeBegin
+            it[EventTable.timeEnd] = event.timeEnd
+            it[EventTable.date] = event.date
+            it[EventTable.name] = event.name
+        }
+    }
+}
+
+fun deleteEventById (eventId: Int) {
+    transaction {
+        EventTable.deleteWhere { EventTable.id eq eventId }
+    }
+}
+
+fun insertNewEvent (event: Event) {
+    transaction {
+        EventTable.insert {
+            it[timeBegin] = event.timeBegin
+            it[timeEnd] = event.timeEnd
+            it[date] = event.date
+            it[name] = event.name
+            it[account] = event.account!!
+        }
     }
 }

@@ -4,6 +4,7 @@ import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import ru.cchgeu.data.createAccount
 import ru.cchgeu.data.models.Account
+import ru.cchgeu.data.selectScheduleByGroupId
 import ru.cchgeu.plugins.*
 import ru.cchgeu.security.TokenConfig
 import ru.cchgeu.security.hashing.*
@@ -12,14 +13,8 @@ import ru.cchgeu.security.token.JwtTokenService
 //fun main(args: Array<String>){
 //    Database.connect("jdbc:postgresql://localhost:5432/schedule", driver = "org.postgresql.Driver",
 //        user = "admin", password = "h9Zhugku4CtxQksWaJ3BmpLF")
-//    val status = createAccount(Account(
-//        login = "testLogin",
-//        passwordHash = "testHash",
-//        salt = "testSalt",
-//        status = 1,
-//        refreshToken = "testToken"
-//    ))
-//    println(status)
+//    val m = selectScheduleByGroupId("СУЗ-221")
+//    println("Ok")
 //}
 fun main(args: Array<String>): Unit =
     io.ktor.server.cio.EngineMain.main(args)

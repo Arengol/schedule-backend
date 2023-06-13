@@ -19,5 +19,13 @@ fun Application.configureRouting(
         getAllMentors()
         associateGroup()
         associateMentor()
+        getScheduleByGroup()
+        getScheduleByUserId()
+        getMentorScheduleByName()
+        //editSchedule()
+        addNewEvent()
+        getEventsByUserId()
+        editEvent()
+        deleteEvent()
     }
 }
